@@ -979,8 +979,9 @@ body {
 /* YARDIM BUTONU VE TANITIM MODALI */
 /* ============================= */
 .help-fab {
-  position: fixed;
-  top: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   right: 10px;
   z-index: 60;
   width: 30px;

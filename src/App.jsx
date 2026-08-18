@@ -496,8 +496,9 @@ function App() {
                 sırayla çalıştırır.
               </li>
               <li>
-                <strong>KOD EDİTÖRÜ:</strong> Blokların sırasını sürükleyerek ya
-                da ▲▼ ile değiştir. Gereksiz bir blok varsa 🗑 ile çöpe at.
+                <strong>KOD EDİTÖRÜ:</strong> Masaüstünde soldaki ⠿ simgesinden
+                tutup sürükle, mobilde ▲▼ kullan. Gereksiz bir blok varsa 🗑 ile
+                çöpe at.
               </li>
               <li>
                 <strong>▶ KODU ÇALIŞTIR:</strong> Programı çalıştırır, sonucu
@@ -519,15 +520,6 @@ function App() {
         </div>
       )}
 
-      <button
-        className="help-fab"
-        onClick={() => setShowIntro(true)}
-        aria-label="Yardım"
-        title="Nasıl oynanır?"
-      >
-        ?
-      </button>
-
       <nav className="level-bar-wrapper">
         <div className="level-bar">
           {levels.map((lvl, idx) => (
@@ -541,6 +533,17 @@ function App() {
             </button>
           ))}
         </div>
+        <nav className="level-bar-wrapper">
+          <div className="level-bar">{/* ...mevcut Lvl butonları... */}</div>
+          <button
+            className="help-fab"
+            onClick={() => setShowIntro(true)}
+            aria-label="Yardım"
+            title="Nasıl oynanır?"
+          >
+            ?
+          </button>
+        </nav>
       </nav>
 
       {/* Sadece mobilde görünür: oyun sahnesi / kod editörü sekmeleri */}
