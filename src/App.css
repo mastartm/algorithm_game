@@ -1,0 +1,1078 @@
+/* src/App.css */
+:root {
+  --bg-dark: #12131c;
+  --panel-bg: #1e1f2e;
+  --border-color: #2e3146;
+  --accent-blue: #00d2ff;
+  --accent-green: #00e676;
+  --accent-red: #ff5252;
+  --accent-yellow: #ffd600;
+  --text-main: #e1e3f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+/* index.css içinde kalmış olabilecek varsayılan Vite/CRA #root
+   şablon stillerini eziyoruz, ama tam ekran değil, ortalanmış ve
+   makul bir maksimum genişliğe sahip bir kutu istiyoruz */
+#root {
+  height: 100% !important;
+  width: 100% !important;
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: "Consolas", "Fira Code", monospace;
+  overflow: hidden;
+}
+
+.game-wrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Üst Seviye Barı */
+.mobile-tabs {
+  display: none;
+}
+
+.level-bar-wrapper {
+  position: relative;
+  background-color: #181925;
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* Sağ kenarda hep duran bir gölge: daha fazla seviye olduğunu ima eder,
+   kaydırma pozisyonundan bağımsız her zaman görünür kalır. */
+.level-bar-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 36px;
+  background: linear-gradient(to right, transparent, #181925 75%);
+  pointer-events: none;
+}
+
+.level-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
+  touch-action: pan-x; /* yatay kaydırmayı dikey sayfa kaydırmasıyla çakışmaktan çıkarır */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-blue) #12131c;
+}
+
+.level-bar::-webkit-scrollbar {
+  height: 6px;
+}
+.level-bar::-webkit-scrollbar-track {
+  background: #12131c;
+}
+.level-bar::-webkit-scrollbar-thumb {
+  background: var(--accent-blue);
+  border-radius: 3px;
+}
+
+.btn-lvl {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.btn-lvl.active {
+  background: var(--accent-blue);
+  color: #000;
+  font-weight: bold;
+}
+
+/* 4 Kolonlu Izgara Yapısı */
+.main-stage {
+  position: relative; /* flying-tokens-layer buna göre konumlanıyor */
+  display: grid;
+  grid-template-columns: 180px 1fr 180px 280px;
+  gap: 12px;
+  padding: 12px;
+  flex: 1;
+  height: calc(100vh - 56px);
+  min-height: 0; /* grid hücrelerinin içeriği taşırmasını engeller */
+  overflow: hidden;
+}
+
+.column {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* flex çocuklarının dikeyde taşmasını engeller */
+}
+
+/* Ekranın üstünde uçan sayı animasyonu için katman */
+.flying-tokens-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.flying-token {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.05rem;
+  border-radius: 8px;
+  color: #000;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(0, 210, 255, 0.3);
+  transition:
+    left 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+    top 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.flying-token.flying-yellow {
+  background: var(--accent-yellow);
+}
+.flying-token.flying-green {
+  background: var(--accent-green);
+}
+
+/* İşlem sembolü (TOPLA, ÇARP vs.) göğüste kısa süreliğine belirir */
+.operator-badge {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-red);
+  color: #fff;
+  font-weight: bold;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  animation: popIn 0.25s ease;
+  z-index: 5;
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* BANT (CONVEYOR) YAPISI */
+.conveyor-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.conveyor-box h3 {
+  font-size: 0.9rem;
+  color: var(--accent-blue);
+  margin-top: 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  text-align: center;
+}
+
+.conveyor-belt {
+  position: relative;
+  background: linear-gradient(180deg, #10111c, #171827);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Bandın üstünde/altında makara (roller) hissi */
+.conveyor-belt::before,
+.conveyor-belt::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 28px;
+  background: #20223a;
+  border: 2px solid var(--accent-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 210, 255, 0.35);
+  z-index: 3;
+}
+.conveyor-belt::before {
+  top: -14px;
+}
+.conveyor-belt::after {
+  bottom: -14px;
+}
+
+.belt-track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  border-radius: 5px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    #333a58 0px,
+    #333a58 10px,
+    #1c1e2e 10px,
+    #1c1e2e 20px
+  );
+  background-size: 100% 20px;
+  animation: beltScroll 0.6s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes beltScroll {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 20px;
+  }
+}
+
+.stream {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  overflow-y: auto;
+  padding: 18px 0;
+  z-index: 2;
+  width: 100%;
+}
+
+.stream-item {
+  width: 46px;
+  height: 46px;
+  line-height: 46px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  color: #000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Sıradaki (bir sonraki alınacak) eleman hafifçe nabız gibi atar,
+   böylece robotun bir sonraki adımda neyi alacağı belli olur */
+.stream-item:first-child {
+  box-shadow:
+    0 0 0 3px rgba(0, 210, 255, 0.55),
+    0 4px 10px rgba(0, 0, 0, 0.45);
+  animation: nextPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes nextPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.stream-anchor {
+  width: 1px;
+  height: 1px;
+}
+
+.input-item {
+  background-color: var(--accent-yellow);
+}
+.output-item {
+  background-color: var(--accent-green);
+}
+
+/* ROBOT SAHNESİ VE KARAKTER */
+.robot-col {
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+@keyframes taskGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(0, 210, 255, 0.25);
+    border-color: var(--accent-blue);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(0, 210, 255, 0.5);
+    border-color: #6be8ff;
+  }
+}
+
+.level-info {
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 210, 255, 0.1),
+    rgba(0, 230, 118, 0.05)
+  );
+  border: 1.5px solid var(--accent-blue);
+  border-radius: 12px;
+  padding: 14px 20px;
+  animation: taskGlow 2.4s ease-in-out infinite;
+}
+
+.level-info h2 {
+  color: var(--accent-blue);
+  margin: 0 0 6px 0;
+  font-size: 1.25rem;
+}
+.level-info h2::before {
+  content: "🎯 ";
+}
+.level-info p {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.robot-arena {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.robot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.robot-antenna {
+  width: 4px;
+  height: 12px;
+  background: var(--accent-blue);
+  position: relative;
+}
+.robot-antenna::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-blue);
+}
+
+.robot-head {
+  width: 60px;
+  height: 40px;
+  background: #3b3e5b;
+  border: 2px solid var(--accent-blue);
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.robot-eye {
+  width: 10px;
+  height: 10px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent-green);
+}
+
+.robot-body {
+  position: relative;
+  width: 92px;
+  height: 65px;
+  background: #2b2d42;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.robot-chest {
+  position: relative;
+  min-width: 50px;
+  min-height: 40px;
+  background: #1a1b26;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+}
+
+.register-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  max-width: 70px;
+}
+
+.register-stack .carried-box {
+  padding: 3px 6px;
+  font-size: 0.9rem;
+}
+
+.carried-box {
+  background: var(--accent-yellow);
+  color: #000;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  box-shadow: 0 0 8px rgba(255, 214, 0, 0.6);
+  animation: landBounce 0.3s ease;
+}
+
+@keyframes landBounce {
+  from {
+    transform: scale(1.35);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.empty-slot {
+  font-size: 0.7rem;
+  color: #505570;
+}
+
+.robot-arm {
+  position: absolute;
+  width: 8px;
+  height: 35px;
+  background: var(--accent-blue);
+  top: 10px;
+  transition: transform 0.3s ease;
+}
+.robot-arm.left {
+  left: -12px;
+  border-radius: 4px 0 0 4px;
+}
+.robot-arm.right {
+  right: -12px;
+  border-radius: 0 4px 4px 0;
+}
+
+.robot-arm.extend.left {
+  transform: rotate(-45deg) translateY(-5px);
+}
+.robot-arm.extend.right {
+  transform: rotate(45deg) translateY(-5px);
+}
+
+.robot-legs {
+  display: flex;
+  gap: 20px;
+  margin-top: 2px;
+}
+
+.leg {
+  width: 10px;
+  height: 20px;
+  background: #3b3e5b;
+  border-radius: 0 0 4px 4px;
+}
+
+/* Robot Konum Sınıfları */
+.robot.pos-center {
+  transform: translateX(0px);
+}
+.robot.pos-inbox {
+  transform: translateX(-160px);
+}
+.robot.pos-outbox {
+  transform: translateX(160px);
+}
+
+/* Yürüme Animasyonu */
+.robot.walking .leg.left {
+  animation: legMove 0.2s infinite alternate;
+}
+.robot.walking .leg.right {
+  animation: legMove 0.2s infinite alternate-reverse;
+}
+
+@keyframes legMove {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+/* Kontrol Butonları */
+.stage-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-action {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-action.run {
+  background: var(--accent-green);
+  color: #000;
+}
+.btn-action.reset {
+  background: var(--border-color);
+  color: var(--text-main);
+}
+
+/* SAĞ KOLON: KOD EDİTÖRÜ */
+.editor-col h3 {
+  margin: 0;
+  color: var(--accent-blue);
+}
+.sub-text {
+  font-size: 0.8rem;
+  color: #707590;
+  margin-bottom: 15px;
+}
+
+.vertical-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes editorLineIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.editor-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #141520;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+  animation: editorLineIn 0.35s ease both;
+}
+
+.drag-handle {
+  flex-shrink: 0;
+  cursor: grab;
+  color: #505570;
+  font-size: 1rem;
+  padding: 2px 4px;
+  touch-action: none; /* sadece tutamaç sürüklemeyi ele alır, satırın geri kalanı serbest */
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.btn-trash {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent-red);
+  font-size: 0.9rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  opacity: 0.75;
+}
+
+.btn-trash:hover:not(:disabled) {
+  background: rgba(255, 82, 82, 0.15);
+  opacity: 1;
+}
+
+.btn-trash:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.reorder-buttons {
+  display: none; /* masaüstünde sürükle-bırak yeterli, gereksiz yer kaplamasın */
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.btn-reorder {
+  width: 22px;
+  height: 18px;
+  line-height: 1;
+  font-size: 0.65rem;
+  background: var(--border-color);
+  color: var(--text-main);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-reorder:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.btn-reorder:not(:disabled):active {
+  background: var(--accent-blue);
+  color: #000;
+}
+
+.editor-line.dragging {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+}
+
+.editor-line.active-executing {
+  background: #2a304d;
+  border-color: var(--accent-yellow);
+}
+
+.line-num {
+  width: 25px;
+  color: #505570;
+  font-size: 0.8rem;
+}
+
+.cmd-tag {
+  flex: 1;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #000;
+}
+
+.block-io {
+  background-color: #cba6f7;
+}
+.block-action {
+  background-color: #a6e3a1;
+}
+.block-logic {
+  background-color: #f38ba8;
+}
+
+.exec-pointer {
+  margin-left: 8px;
+  font-size: 1.1rem;
+}
+
+/* Bildirimler */
+.alert {
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-weight: bold;
+}
+.alert.success {
+  background: rgba(0, 230, 118, 0.2);
+  border: 1px solid var(--accent-green);
+}
+.alert.error {
+  background: rgba(255, 82, 82, 0.2);
+  border: 1px solid var(--accent-red);
+}
+
+.btn-next-level {
+  display: block;
+  margin-top: 8px;
+  background: var(--accent-green);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ============================= */
+/* MOBİL / DAR EKRAN DÜZENİ       */
+/* ============================= */
+@media (max-width: 900px) {
+  body {
+    overflow: auto;
+  }
+
+  .game-wrapper {
+    height: 100vh;
+    overflow: hidden; /* artık sekmeler sayesinde kaydırmaya gerek yok */
+  }
+
+  .level-bar {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  .btn-lvl {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  /* Mobilde karmaşık grid yerine düz, üst üste dizilen basit bir akış.
+     Aynı anda sadece bir "sekme" (oyun ya da kod) görünür olduğu için
+     kaydırmaya neredeyse hiç ihtiyaç kalmıyor. */
+  .main-stage {
+    display: flex;
+    flex-direction: column;
+    height: calc(
+      100vh - 96px
+    ); /* level-bar + mobile-tabs yüksekliği çıkarıldı */
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .column {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  /* Bantlar mobilde çok yer kaplamasın diye sabit, makul bir yükseklik */
+  .conveyor-box {
+    min-height: 0;
+  }
+  .conveyor-belt {
+    min-height: 130px;
+    max-height: 160px;
+  }
+
+  .robot-arena {
+    height: 130px;
+  }
+
+  .robot-col {
+    overflow-y: visible;
+  }
+
+  .level-info h2 {
+    font-size: 1.05rem;
+  }
+  .level-info p {
+    font-size: 0.82rem;
+  }
+
+  .editor-col {
+    min-height: 0;
+  }
+  .vertical-editor {
+    max-height: none;
+    flex: 1;
+  }
+
+  /* Mobilde sürükle-bırak güvenilir çalışmadığı için ▲▼ butonları burada
+     tekrar görünür oluyor; masaüstünde bu butonlar gizli kalıyor. */
+  .reorder-buttons {
+    display: flex;
+  }
+
+  /* Oyun / Kod sekme çubuğu sadece mobilde görünür */
+  .mobile-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #14151f;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .mobile-tab-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--panel-bg);
+    color: var(--text-main);
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .mobile-tab-btn.active {
+    background: var(--accent-blue);
+    color: #000;
+    border-color: var(--accent-blue);
+  }
+
+  .tab-run-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    margin-left: 4px;
+    animation: nextPulse 1s ease-in-out infinite;
+  }
+
+  .task-reminder {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .robot.pos-inbox {
+    transform: translateX(-80px);
+  }
+  .robot.pos-outbox {
+    transform: translateX(80px);
+  }
+
+  .stage-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-action {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+/* ============================= */
+/* PYTHON KONSOLU                 */
+/* ============================= */
+.console-box {
+  width: 100%;
+  background: #0b0c14;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: left;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.console-header {
+  background: #181925;
+  color: var(--accent-green);
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.console-body {
+  padding: 8px 10px;
+  height: 130px;
+  overflow-y: auto;
+  font-family: "Consolas", "Fira Code", monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: #9ef7a0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.console-placeholder {
+  color: #505570;
+  font-style: italic;
+  white-space: normal;
+}
+
+.console-line {
+  white-space: pre;
+}
+
+.console-error {
+  color: var(--accent-red);
+  font-weight: bold;
+}
+
+/* Yanlış cevap uyarısındaki ipucu satırı */
+.hint-text {
+  margin-top: 6px;
+  font-weight: normal;
+  font-size: 0.8rem;
+  color: var(--accent-yellow);
+}
+
+/* ============================= */
+/* YARDIM BUTONU VE TANITIM MODALI */
+/* ============================= */
+.help-fab {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 60;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-blue);
+  background: var(--panel-bg);
+  color: var(--accent-blue);
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.intro-modal {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.intro-modal h2 {
+  margin-top: 0;
+  color: var(--accent-blue);
+  text-align: center;
+}
+
+.intro-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-main);
+}
+
+.intro-list strong {
+  color: var(--accent-yellow);
+}
+
+.intro-close-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* Kod editörünün altında görevi hatırlatan kutu — sadece mobilde gerekli,
+   masaüstünde üstteki görev kartı zaten görünür durumda. */
+.task-reminder {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #141520;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.task-reminder strong {
+  color: var(--accent-blue);
+}
+
+.task-reminder p {
+  margin: 4px 0 0 0;
+  color: #a0a5c0;
+  font-size: 0.8rem;
+}
